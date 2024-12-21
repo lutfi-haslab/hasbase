@@ -13,10 +13,9 @@
     "tauri:dev": "cp .env.desktop .env.local && tauri dev",
     "tauri:android:dev": "PLATFORM=mobile tauri android dev",
     "tauri:ios:dev": "tauri ios dev",
-    "server": "bun run --watch server/index.ts",
+    "server": "bun run --watch bun-server/index.ts",
     "build:tauri": "bun run tauri build --bundles dmg",
-    "build:server": "bun build server/index.ts --target=bun-darwin-arm64 --outfile src-tauri/binaries/app-server-aarch64-apple-darwin --compile",
-    "build:server2": "bun build server/index.ts --outfile src-tauri/binaries/app --compile",
+    "build:server": "bun build bun-server/index.ts --target=bun-darwin-arm64 --outfile src-tauri/binaries/app-server-aarch64-apple-darwin --compile",
     "test": "bun build server/test.ts --compile --outfile server/app"
   },
   "dependencies": {
