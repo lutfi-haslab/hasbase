@@ -1,180 +1,71 @@
 import * as React from "react"
 
 import { SearchForm } from "@/components/search-form"
-import { VersionSwitcher } from "@/components/version-switcher"
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-  SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail,
+  SidebarRail
 } from "@/components/ui/sidebar"
+import { useAiContext } from "@/context/AiProvider"
+import { useDB } from "@/context/DbProvider"
+import { useGetChatMemory } from "@/hooks/useGetChatMemrory"
+import { GalleryVerticalEnd, Trash, X } from "lucide-react"
+import { Link } from "react-router"
 
-// This is sample data.
-const data = {
-  versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
-  navMain: [
-    {
-      title: "Getting Started",
-      url: "#",
-      items: [
-        {
-          title: "Installation",
-          url: "#",
-        },
-        {
-          title: "Project Structure",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Building Your Application",
-      url: "#",
-      items: [
-        {
-          title: "Routing",
-          url: "#",
-        },
-        {
-          title: "Data Fetching",
-          url: "#",
-          isActive: true,
-        },
-        {
-          title: "Rendering",
-          url: "#",
-        },
-        {
-          title: "Caching",
-          url: "#",
-        },
-        {
-          title: "Styling",
-          url: "#",
-        },
-        {
-          title: "Optimizing",
-          url: "#",
-        },
-        {
-          title: "Configuring",
-          url: "#",
-        },
-        {
-          title: "Testing",
-          url: "#",
-        },
-        {
-          title: "Authentication",
-          url: "#",
-        },
-        {
-          title: "Deploying",
-          url: "#",
-        },
-        {
-          title: "Upgrading",
-          url: "#",
-        },
-        {
-          title: "Examples",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "API Reference",
-      url: "#",
-      items: [
-        {
-          title: "Components",
-          url: "#",
-        },
-        {
-          title: "File Conventions",
-          url: "#",
-        },
-        {
-          title: "Functions",
-          url: "#",
-        },
-        {
-          title: "next.config.js Options",
-          url: "#",
-        },
-        {
-          title: "CLI",
-          url: "#",
-        },
-        {
-          title: "Edge Runtime",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Architecture",
-      url: "#",
-      items: [
-        {
-          title: "Accessibility",
-          url: "#",
-        },
-        {
-          title: "Fast Refresh",
-          url: "#",
-        },
-        {
-          title: "Next.js Compiler",
-          url: "#",
-        },
-        {
-          title: "Supported Browsers",
-          url: "#",
-        },
-        {
-          title: "Turbopack",
-          url: "#",
-        },
-      ],
-    },
-  ],
-}
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { data: chatLists, isLoading, refetch } = useGetChatMemory();
+  const db = useDB();
+  const [isSelect, setIsSelect] = React.useState("New Chat");
+  const {createNewChat} = useAiContext();
+
+  const removeChatHistories = async () => {
+    const result = await db.query('DELETE FROM chat_memory');
+    if (result) refetch();
+  }
+
+  const removeChatById = async (conversationId: string) => {
+    const result = await db.query(`DELETE FROM chat_memory WHERE conversation_id = $1`, [conversationId]);
+    if (result) refetch();
+  }
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <Sidebar {...props}>
+    <Sidebar {...props} className="bg-gray-100 shadow-lg rounded-lg">
       <SidebarHeader>
-        <VersionSwitcher
-          versions={data.versions}
-          defaultVersion={data.versions[0]}
-        />
-        <SearchForm />
+        <SidebarMenuButton
+          size="lg"
+          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+        >
+          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+            <GalleryVerticalEnd className="size-4" />
+          </div>
+          <p>Hasbase</p>
+        </SidebarMenuButton>
+        <SearchForm className="mt-2" />
       </SidebarHeader>
-      <SidebarContent>
-        {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item) => (
-          <SidebarGroup key={item.title}>
-            <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {item.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={item.isActive}>
-                      <a href={item.url}>{item.title}</a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+      <SidebarContent className="p-4">
+        <SidebarGroup>
+          <Link to="/chat" className="text-blue-600 hover:underline font-semibold" onClick={createNewChat}>New Chat</Link>
+          <SidebarGroupLabel className="mt-4 text-gray-700 font-bold flex items-center gap-2 justify-between">
+            <p>History</p>
+            <Trash onClick={removeChatHistories} className="cursor-pointer size-4 hover:text-red-500" />
+          </SidebarGroupLabel>
+          {chatLists && chatLists?.rows.map((chat, index) => (
+            <SidebarMenuItem key={index} onClick={() => setIsSelect(chat.conversation_id)} className={`flex items-center gap-2 ml-4 p-2 my-1  hover:bg-gray-200 rounded ${isSelect === chat.conversation_id ? 'bg-gray-200' : ''}`}>
+              <Link to={`/chat/${chat.conversation_id}`} className={`${isSelect === chat.conversation_id ? 'text-blue-600' : 'text-gray-800'}  hover:text-blue-600`}>{chat.title}</Link>
+              <X onClick={() => removeChatById(chat.conversation_id)} className="cursor-pointer size-6 hover:text-red-500" />
+            </SidebarMenuItem>
+          ))}
+        </SidebarGroup>
       </SidebarContent>
       <SidebarRail />
     </Sidebar>

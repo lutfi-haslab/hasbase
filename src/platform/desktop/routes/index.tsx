@@ -1,13 +1,11 @@
-import { Route, Routes } from 'react-router'
-import DesktopHome from '../presenter/Home'
-import Test from '../presenter/Test'
+import { Route, Routes } from "react-router";
+import HomePage from "../pages/HomePage";
 
 const DesktopRoutes = () => {
-    return (
-        <Routes>
-            <Route path='/' element={<DesktopHome />} />
-            <Route path="/test" element={<Test />} />
-        </Routes>
-    )
-}
-export default DesktopRoutes
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+    </Routes>
+  );
+};
+export default DesktopRoutes;

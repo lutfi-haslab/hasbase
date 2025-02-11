@@ -8,4 +8,8 @@
 
 # Ignore files inside binaries
 /binaries/*
+/bin/*
+/bin/api/*
 
+
+data/*

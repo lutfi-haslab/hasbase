@@ -12,9 +12,12 @@
   "app": {
     "windows": [
       {
-        "title": "hasbase",
-        "width": 800,
-        "height": 600
+        "fullscreen": false,
+        "height": 950,
+        "resizable": true,
+        "title": "Hasbase",
+        "width": 1200,
+        "useHttpsScheme": true
       }
     ],
     "security": {
@@ -23,7 +26,10 @@
   },
   "bundle": {
     "active": true,
+    "category": "DeveloperTool",
+    "copyright": "",
     "targets": "all",
+    "externalBin": ["bin/api/main"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -50,9 +56,6 @@
       "entitlements": "./Entitlements.plist",
       "hardenedRuntime": true,
       "minimumSystemVersion": "10.13"
-    },
-    "externalBin": [
-      "binaries/app-server"
-    ]
+    }
   }
 }

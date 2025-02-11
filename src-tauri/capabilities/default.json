@@ -14,14 +14,20 @@
       "identifier": "shell:allow-execute",
       "allow": [
         {
-          "name": "exec-sh",
-          "cmd": "sh",
-          "args": [
-            "-c",
-            {
-              "validator": "\\S+"
-            }
-          ]
+          "args": false,
+          "cmd": "",
+          "name": "bin/api/main"
+        }
+      ]
+    },
+    {
+      "identifier": "core:default",
+      "allow": [
+        {
+          "url": "http://**/"
+        },
+        {
+          "url": "https://**/"
         }
       ]
     }

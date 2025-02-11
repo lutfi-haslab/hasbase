@@ -1,6 +1,14 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
+// src/main.rs
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[cfg(not(mobile))]
 fn main() {
-    hasbase_lib::run()
+    // Desktop entry point
+    hasbase_lib::desktop_entry_point();
+}
+
+#[cfg(mobile)]
+fn main() {
+    // Mobile entry point
+    hasbase_lib::mobile_entry_point();
 }
