@@ -1,4 +1,4 @@
-# Project Hasbase 
+# Project Hasbase - A Chat App
 
 ## Overview
 This project utilizes Vite, Tauri, and Bun for development and building across multiple platforms, including web, mobile, and desktop.
