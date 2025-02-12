@@ -3,8 +3,11 @@
 import { ChatDeepSeek } from "@langchain/deepseek";
 import { ChatOllama } from "@langchain/ollama";
 import { ChatOpenAI } from "@langchain/openai";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { chatDB } from "../db";
 import { ChatMessage } from "../model";
+import { v4 as uuidv4 } from 'uuid'; // Import uuid library (if not already installed: npm install uuid)
+
 
 export const createChatModel = (modelName: string, provider: string, apiKey?: string, streaming = false) => {
     if (provider === "openai") {
@@ -22,6 +25,13 @@ export const createChatModel = (modelName: string, provider: string, apiKey?: st
             // other params...
         });
 
+    } else if (provider === "gemini") {
+        return new ChatGoogleGenerativeAI({
+            model: modelName,
+            temperature: 0,
+            maxRetries: 2,
+            apiKey
+        });
     } else {
         return new ChatOllama({
             model: modelName,
@@ -32,11 +42,11 @@ export const createChatModel = (modelName: string, provider: string, apiKey?: st
     }
 };
 
-export const generateTitle = async (firstMessage: string, model: ChatOpenAI | ChatOllama): Promise<string> => {
+export const generateTitle = async (firstMessage: string, model: ChatOpenAI | ChatOllama | ChatDeepSeek | ChatGoogleGenerativeAI): Promise<string> => {
     const titlePrompt = [
         {
             role: "system",
-            content: "Generate a short, concise title (maximum 6 words) for a conversation that starts with this message. Just return the title without any additional text or punctuation."
+            content: "Generate very very very short title based on context, just few words, no punctuation. max 3 words"
         },
         {
             role: "user",
@@ -58,36 +68,38 @@ export const getChatHistory = async (conversationId: string): Promise<ChatMessag
 };
 
 export const initializeChat = async (
-    conversationId: string,
+    providedConversationId: string | undefined,
     message: string,
-    model: ChatOpenAI | ChatOllama
+    model: ChatOpenAI | ChatOllama | ChatDeepSeek | ChatGoogleGenerativeAI
 ) => {
-    let title: string;
-    let chatExists = false;
+    const conversationId = providedConversationId || uuidv4(); // Use provided ID or generate a UUID
+    const timestamp = new Date().toISOString();
 
     try {
+        // Attempt to retrieve existing chat data.  This is the primary path.
         const chatData = await chatDB.getData(`/chats/${conversationId}`);
-        chatExists = true;
-        title = chatData.title;
+        const history = await getChatHistory(conversationId);
+
+        return {
+            title: chatData.title,
+            history: history.map(msg => ({ role: msg.role, content: msg.content })),
+            conversationId,
+            isNew: false // Chat exists
+        };
     } catch (error) {
-        // New conversation
-        title = await generateTitle(message, model);
-        await chatDB.push(`/chats/${conversationId}`, {
+        // Handle new chat creation.  This is the fallback path.
+        const title = await generateTitle(message, model);
+
+        // Create the chat entry.  No need for a separate push/setData if it doesn't exist.
+        await chatDB.push(`/chats/${conversationId}`, { title, messages: [], timestamp });
+
+        return {
             title,
-            messages: []
-        });
+            history: [], // No history for a new chat
+            conversationId,
+            isNew: true // Chat is new
+        };
     }
-
-    const history = await getChatHistory(conversationId);
-
-    return {
-        title,
-        history: history.map(msg => ({
-            role: msg.role,
-            content: msg.content
-        })),
-        isNew: !chatExists
-    };
 };
 
 export const saveMessages = async (

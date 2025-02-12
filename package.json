@@ -36,6 +36,7 @@
     "@langchain/community": "^0.3.28",
     "@langchain/core": "^0.3.37",
     "@langchain/deepseek": "^0.0.1",
+    "@langchain/google-genai": "^0.1.8",
     "@langchain/ollama": "^0.1.4",
     "@langchain/openai": "^0.4.2",
     "@radix-ui/react-avatar": "^1.1.2",

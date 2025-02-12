@@ -110,6 +110,7 @@ function HomePage() {
     { provider: "openai", model: "gpt-4o-mini", apiKey: "" },
     { provider: "deepseek", model: "deepseek-chat", apiKey: "" },
     { provider: "deepseek", model: "deepseek-reasoner", apiKey: "" },
+    { provider: "gemini", model: "gemini-1.5-flash", apiKey: "" },
   ];
 
   const handleModelSave = async (config: ModelConfig) => {
@@ -358,7 +359,8 @@ function HomePage() {
                       }`}
                     >
                       <div className="font-medium text-gray-900">
-                        {chat.title}
+                        {chat.title.split(" ").slice(0, 4).join(" ") +
+                          (chat.title.split(" ").length > 4 ? " ..." : "")}
                       </div>
                       <div className="text-sm text-gray-500 truncate">
                         {chat.messages[chat.messages.length - 1]?.content}

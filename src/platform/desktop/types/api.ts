@@ -17,6 +17,7 @@ export interface ChatMessage {
   role: string;
   content: string;
   timestamp: string;
+  streaming?: boolean; // Add this line
 }
 
 export interface ChatHistoryResponse {
