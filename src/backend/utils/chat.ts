@@ -1,19 +1,27 @@
 // utils/chat.ts
 
+import { ChatDeepSeek } from "@langchain/deepseek";
 import { ChatOllama } from "@langchain/ollama";
 import { ChatOpenAI } from "@langchain/openai";
 import { chatDB } from "../db";
-import { CONFIG } from "../config";
 import { ChatMessage } from "../model";
 
 export const createChatModel = (modelName: string, provider: string, apiKey?: string, streaming = false) => {
     if (provider === "openai") {
         return new ChatOpenAI({
-            modelName,
+            model: modelName,
             // apiKey: CONFIG.OPEN_AI_API_KEY,
             apiKey,
             streaming
         });
+    } else if (provider === "deepseek") {
+        return new ChatDeepSeek({
+            model: modelName,
+            temperature: 0,
+            apiKey
+            // other params...
+        });
+
     } else {
         return new ChatOllama({
             model: modelName,

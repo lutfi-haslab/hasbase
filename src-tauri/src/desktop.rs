@@ -4,9 +4,9 @@ use tauri::{Emitter, Manager, RunEvent};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 use std::fs;
-use crate::desktop::fs::File;
+// use crate::desktop::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 use std::env;
 
 
@@ -123,16 +123,36 @@ fn ensure_directory(base_path: &PathBuf, dir_name: &str) -> Result<PathBuf, std:
 }
 
 // Helper function to create JSON file if it doesn't exist
-fn ensure_json_file(base_path: &PathBuf, file_name: &str) -> Result<(), std::io::Error> {
+// fn ensure_json_file(base_path: &PathBuf, file_name: &str) -> Result<(), std::io::Error> {
+//     let file_path = base_path.join(file_name);
+//     if !file_path.exists() {
+//         let mut file = File::create(&file_path)?;
+//         // Initialize with empty JSON object
+//         file.write_all(b"{}")?;
+//         println!("[tauri] Created JSON file at: {:?}", file_path);
+//     } else {
+//         println!("[tauri] JSON file already exists at: {:?}", file_path);
+//     }
+//     Ok(())
+// }
+
+fn ensure_json_file(base_path: &Path, file_name: &str) -> std::io::Result<()> {
     let file_path = base_path.join(file_name);
+
+    // Define initial content for specific files
+    let initial_content = match file_name {
+        "chatDB.json" => r#"{"chats": {}}"#,
+        "documentDB.json" => r#"{"documents": {}}"#,
+        "userDB.json" => r#"{"users": {}}"#,
+        _ => "{}",
+    };
+
+    // Check if the file exists; if not, create it with initial content
     if !file_path.exists() {
-        let mut file = File::create(&file_path)?;
-        // Initialize with empty JSON object
-        file.write_all(b"{}")?;
-        println!("[tauri] Created JSON file at: {:?}", file_path);
-    } else {
-        println!("[tauri] JSON file already exists at: {:?}", file_path);
+        let mut file = fs::File::create(&file_path)?;
+        file.write_all(initial_content.as_bytes())?;
     }
+
     Ok(())
 }
 
@@ -164,9 +184,7 @@ pub fn desktop_entry_point() {
             // Create all required directories
             let directories = [
                 "vector_db",
-                "chatDB",
-                "userDB",
-                "documentDB"
+                "uploads",
             ];
 
             // Create directories
@@ -182,6 +200,7 @@ pub fn desktop_entry_point() {
                 "userDB.json",
                "documentDB.json",
             ];
+            
 
             for file in json_files.iter() {
                 if let Err(e) = ensure_json_file(&base_path, file) {

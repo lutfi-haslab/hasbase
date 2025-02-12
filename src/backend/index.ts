@@ -6,8 +6,9 @@ import * as readline from 'readline';
 import { cors } from '@elysiajs/cors'
 import { CONFIG } from './config';
 import { DocumentMetadata } from './model';
-import { chatRoutesV1, documentRoutesV1 } from './routes/v1';
 import { userRoutesV1 } from './routes/v1/user';
+import { chatRoutesV1 } from './routes/v1/chat';
+import { documentRoutesV1 } from './routes/v1/document';
 
 
 const originalWarn = console.log;
@@ -61,7 +62,14 @@ const setupCommandHandler = () => {
     terminal: false
   });
 
+  // rl.on('line', async (line) => {
+  //   if (line.trim() === 'sidecar shutdown') {
+  //     await shutdown();
+  //   }
+  // });
+
   rl.on('line', async (line) => {
+    console.log(""); // Force a newline before logging
     if (line.trim() === 'sidecar shutdown') {
       await shutdown();
     }

@@ -93,9 +93,9 @@ export async function uploadDocument(file: File, apiKey: string): Promise<Docume
   const response = await fetch(`${API_BASE_URL}/v1/documents/upload`, {
     method: 'POST',
     body: formData,
-    headers: { 'Content-Type': 'multipart/form-data', "apiKey": apiKey },
+    headers: { "apiKey": apiKey },
   },);
-  return response.json();
+  return await response.json();
 }
 
 export async function getDocument(documentId: string): Promise<Document> {

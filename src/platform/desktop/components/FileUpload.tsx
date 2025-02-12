@@ -1,11 +1,20 @@
-import React, { useCallback } from 'react';
-import { Upload } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from "react";
+import { Upload } from "lucide-react";
 
 interface Props {
   onUpload: (file: File) => Promise<void>;
 }
 
 export function FileUpload({ onUpload }: Props) {
+  const [apiKey, setApiKey] = useState(
+    JSON.parse(localStorage.getItem("modelApiKeys") as string)
+  );
+
+  useEffect(() => {
+    if (apiKey?.openai === "" || apiKey?.openai === undefined)
+      alert("Add OpenAI apiKey to run document embeddings");
+  }, [apiKey]);
+
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -23,7 +32,10 @@ export function FileUpload({ onUpload }: Props) {
     >
       <input
         type="file"
-        onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+        onChange={(e) => {
+          console.log(e.target.files?.[0]);
+          e.target.files?.[0] && onUpload(e.target.files[0]);
+        }}
         className="hidden"
         id="file-upload"
       />
@@ -35,7 +47,7 @@ export function FileUpload({ onUpload }: Props) {
         <div className="text-sm text-gray-600">
           <span className="text-blue-500 hover:text-blue-700">
             Click to upload
-          </span>{' '}
+          </span>{" "}
           or drag and drop
         </div>
       </label>

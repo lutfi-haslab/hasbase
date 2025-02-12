@@ -8,11 +8,11 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { Elysia, t } from 'elysia';
 import { existsSync } from 'fs';
-import { unlink, writeFile } from 'fs/promises';
+import { unlink } from 'fs/promises';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import { v4 as uuidv4 } from 'uuid';
 import { CONFIG } from '../../config';
-import { appDataDir } from '@tauri-apps/api/path';
+import { writeFile } from 'fs/promises';
 
 
 // Initialize directories
@@ -50,6 +50,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
     })
 
     .post('/upload', async ({ body, request: { headers } }) => {
+        console.log("/document/upload");
         if (!body.file) {
             throw new Error('No file provided');
         }
@@ -61,7 +62,9 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
 
         const fileBuffer = await file.arrayBuffer();
         const docId = uuidv4();
-        const filePath = `${docId}.pdf`
+        const filePath = `${CONFIG.UPLOAD_PATH}/${docId}.pdf`
+        console.log(filePath);
+
 
         // Create document record
         const document = {
@@ -76,6 +79,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
 
         try {
             // Save file temporarily
+
             await writeFile(filePath, Buffer.from(fileBuffer));
 
             // Process document
@@ -116,6 +120,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
             };
 
         } catch (error: any) {
+            console.log(JSON.stringify(error.message));
             // Update document status on failure
             await documentDBHelpers.updateDocument(docId, {
                 ...document,
@@ -123,11 +128,6 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
                 error: error.message
             });
             throw new Error(`Processing failed: ${error.message}`);
-        } finally {
-            // Clean up temporary file
-            if (existsSync(filePath)) {
-                await unlink(filePath);
-            }
         }
     }, {
         body: t.Object({

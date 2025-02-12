@@ -56,6 +56,9 @@ function HomePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [customModels, setCustomModels] = useState<ModelConfig[]>([]);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [apiKey, setApiKey] = useState(
+    JSON.parse(localStorage.getItem("modelApiKeys") as string)
+  );
   const [showLogger, setShowLogger] = useState(false);
   const [status, setStatus] = useState({ connected: false, info: "" });
   const [logs, setLogs] = useState(
@@ -105,6 +108,8 @@ function HomePage() {
     { provider: "openai", model: "gpt-4o", apiKey: "" },
     { provider: "openai", model: "gpt-4o-latest", apiKey: "" },
     { provider: "openai", model: "gpt-4o-mini", apiKey: "" },
+    { provider: "deepseek", model: "deepseek-chat", apiKey: "" },
+    { provider: "deepseek", model: "deepseek-reasoner", apiKey: "" },
   ];
 
   const handleModelSave = async (config: ModelConfig) => {
@@ -127,6 +132,13 @@ function HomePage() {
       }
 
       const { model, apiKey, provider } = selectedModelConfig;
+      if (
+        (!apiKey || apiKey === "") &&
+        (provider === "openai" || provider === "deepseek")
+      ) {
+        alert("Add OpenAI or Deepseek API key to run chat");
+        return;
+      }
 
       if (selectedDocument) {
         return api.chatWithDocument(
@@ -148,7 +160,7 @@ function HomePage() {
         );
       }
     },
-    onSuccess: (response: ChatResponse) => {
+    onSuccess: (response: ChatResponse | any) => {
       const newMessage: ChatMessageType = {
         role: "assistant",
         content: response?.data?.response,
@@ -162,8 +174,14 @@ function HomePage() {
   });
 
   const uploadDocumentMutation = useMutation({
-    mutationFn: async ({ file, apiKey }: { file: File; apiKey: string }) =>
-      await api.uploadDocument(file, apiKey),
+    mutationFn: async (file: File) => {
+      if (!apiKey?.openai || apiKey?.openai === "") {
+        alert("Add OpenAI apiKey to run document embeddings");
+        return;
+      }
+      return await api.uploadDocument(file, apiKey?.openai);
+    },
+
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
       setShowUploadModal(false);
@@ -500,12 +518,7 @@ function HomePage() {
             <div className="bg-white rounded-lg p-6 max-w-md w-full">
               <h2 className="text-lg font-semibold mb-4">Upload Document</h2>
               <FileUpload
-                onUpload={async (file) =>
-                  uploadDocumentMutation.mutate({
-                    file,
-                    apiKey: selectedModelConfig?.apiKey as string,
-                  })
-                }
+                onUpload={async (file) => uploadDocumentMutation.mutate(file)}
               />
               <div className="mt-4 flex justify-end">
                 <button

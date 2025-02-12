@@ -12,6 +12,7 @@ export const CONFIG = {
     CHAT_DB_PATH: join(BASE_DIR, "chatDB"),
     USER_DB_PATH: join(BASE_DIR, "userDB"),
     DOCUMENT_DB_PATH: join(BASE_DIR, "documentDB"),
+    UPLOAD_PATH: join(BASE_DIR, "uploads"),
     PORT: 8008,
     DEFAULT_MODEL: "gpt-4o-mini",
     SYSTEM_PROMPT: "You are a helpful assistant. Provide clear and concise responses."
