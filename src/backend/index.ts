@@ -24,19 +24,19 @@ let DOCUMENTS: Record<string, DocumentMetadata> = {};
 let server: any;
 
 
-// Document management functions
-const loadDocumentsMetadata = async () => {
-  try {
-    await mkdir(CONFIG.VECTOR_DB_PATH, { recursive: true });
-    if (existsSync(CONFIG.METADATA_FILE)) {
-      const data = await readFile(CONFIG.METADATA_FILE, 'utf-8');
-      DOCUMENTS = JSON.parse(data);
-    }
-  } catch (error) {
-    console.error('Error loading documents:', error);
-    DOCUMENTS = {};
-  }
-};
+// // Document management functions
+// const loadDocumentsMetadata = async () => {
+//   try {
+//     await mkdir(CONFIG.VECTOR_DB_PATH, { recursive: true });
+//     if (existsSync(CONFIG.METADATA_FILE)) {
+//       const data = await readFile(CONFIG.METADATA_FILE, 'utf-8');
+//       DOCUMENTS = JSON.parse(data);
+//     }
+//   } catch (error) {
+//     console.error('Error loading documents:', error);
+//     DOCUMENTS = {};
+//   }
+// };
 
 // Graceful shutdown
 const shutdown = async () => {
@@ -45,7 +45,7 @@ const shutdown = async () => {
     if (server) {
       await server.stop();
     }
-    await writeFile(CONFIG.METADATA_FILE, JSON.stringify(DOCUMENTS));
+    // await writeFile(CONFIG.METADATA_FILE, JSON.stringify(DOCUMENTS));
     process.exit(0);
   } catch (error) {
     console.error('Error during shutdown:', error);
@@ -97,7 +97,7 @@ const app = new Elysia()
 // Server startup
 const startServer = async () => {
   try {
-    await loadDocumentsMetadata();
+    // await loadDocumentsMetadata();
     server = await app.listen(CONFIG.PORT);
     console.log(`Server started on http://localhost:${CONFIG.PORT}`);
 

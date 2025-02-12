@@ -1,5 +1,4 @@
 {
-  "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": [
@@ -7,6 +6,7 @@
   ],
   "permissions": [
     "core:default",
+    "core:path:default",
     "shell:allow-open",
     "shell:default",
     "shell:allow-execute",
@@ -30,6 +30,10 @@
           "url": "https://**/"
         }
       ]
+    },
+    {
+      "identifier": "core:path:default",
+      "allow": [{ "path": "$APPDATA" }, { "path": "$APPDATA/**" }]
     }
   ]
 }

@@ -1,32 +1,29 @@
 // routes/documentRoutes.ts
 
 import { chatDB, documentDBHelpers } from '@/backend/db';
-import { createChatModel, formatChatContext, getChatHistory, initializeChat, saveMessages } from '@/backend/utils/chat';
+import { documentChatResponseSchema } from '@/backend/model';
+import { createChatModel, formatChatContext, initializeChat, saveMessages } from '@/backend/utils/chat';
 import * as lancedb from '@lancedb/lancedb';
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { Elysia, t } from 'elysia';
 import { existsSync } from 'fs';
-import { mkdir, unlink, writeFile } from 'fs/promises';
+import { unlink, writeFile } from 'fs/promises';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { CONFIG } from '../../config';
-import { documentChatResponseSchema } from '@/backend/model';
+import { appDataDir } from '@tauri-apps/api/path';
 
-const BASE_DIR = process.cwd();
-const UPLOAD_DIR = join(BASE_DIR, 'data/uploads');
-const VECTOR_DB_PATH = join(BASE_DIR, 'data/vector_db');
 
 // Initialize directories
-for (const dir of [VECTOR_DB_PATH, UPLOAD_DIR]) {
-    if (!existsSync(dir)) {
-        await mkdir(dir, { recursive: true });
-    }
-}
+// for (const dir of [VECTOR_DB_PATH, UPLOAD_DIR]) {
+//     if (!existsSync(dir)) {
+//         await mkdir(dir, { recursive: true });
+//     }
+// }
 
-const embeddings = new OpenAIEmbeddings({
-    apiKey: CONFIG.OPEN_AI_API_KEY,
+const embeddings = (apiKey: string) => new OpenAIEmbeddings({
+    apiKey,
     batchSize: 512,
     model: "text-embedding-3-small",
     dimensions: 1536,
@@ -41,8 +38,9 @@ const TEXT_SPLITTER = new RecursiveCharacterTextSplitter({
 
 // Initialize LanceDB connection
 let db: Awaited<ReturnType<typeof lancedb.connect>>;
+
 const initDB = async () => {
-    db = await lancedb.connect(VECTOR_DB_PATH);
+    db = await lancedb.connect(CONFIG.VECTOR_DB_PATH);
 };
 await initDB();
 
@@ -51,7 +49,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
         return await documentDBHelpers.getAllDocuments();
     })
 
-    .post('/upload', async ({ body }) => {
+    .post('/upload', async ({ body, request: { headers } }) => {
         if (!body.file) {
             throw new Error('No file provided');
         }
@@ -63,7 +61,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
 
         const fileBuffer = await file.arrayBuffer();
         const docId = uuidv4();
-        const filePath = join(UPLOAD_DIR, `${docId}.pdf`);
+        const filePath = `${docId}.pdf`
 
         // Create document record
         const document = {
@@ -87,7 +85,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
             const chunks = splitDocs.map(doc => doc.pageContent.trim());
 
             // Get embeddings
-            const vectors = await embeddings.embedDocuments(chunks);
+            const vectors = await embeddings(headers.get('apiKey') as string).embedDocuments(chunks);
 
             // Create document chunks with vectors
             const documentChunks = chunks.map((content, index) => ({
@@ -135,6 +133,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
         body: t.Object({
             file: t.File()
         }),
+        headers: t.Optional(t.Object({ apiKey: t.String() })),
         response: t.Object({
             id: t.String(),
             status: t.String(),
@@ -151,13 +150,16 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
         return document;
     })
 
-    .post('/:document_id/chat', async ({ params, body, query }) => {
+    .post('/:document_id/chat', async ({ params, body, query, request: { headers } }) => {
         const { document_id } = params;
         const {
             question,
-            num_context = 3
+            num_context = 3,
+            model = 'gpt-4o-mini',
+            provider
         } = body;
         let { conversationId = `session-${Date.now()}` } = query;
+
 
         // Validate document
         const document = await documentDBHelpers.getDocument(document_id);
@@ -169,7 +171,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
         }
 
         // Get query embedding and search for relevant chunks
-        const queryVector = await embeddings.embedQuery(question);
+        const queryVector = await embeddings(headers.get('apiKey') as string).embedQuery(question);
         const table = await db.openTable(document_id);
         const relevantChunks = await table.vectorSearch(queryVector)
             .limit(num_context)
@@ -180,7 +182,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
             }\n\nIf unsure, say you don't know.`;
 
         // Get response from chat model
-        const chatModel = createChatModel('gpt-4o-mini');
+        const chatModel = createChatModel(model, provider, headers.get('apiKey') as string);
         const { title, history } = await initializeChat(conversationId, question, chatModel);
         const messages = formatChatContext(systemPrompt, history, question);
         const response = await chatModel.invoke(messages);
@@ -204,7 +206,8 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
         query: t.Object({
             conversationId: t.Optional(t.String())
         }),
-        body: t.Object({ question: t.String(), num_context: t.Optional(t.Number()) }),
+        headers: t.Optional(t.Object({ apiKey: t.String() })),
+        body: t.Object({ question: t.String(), num_context: t.Optional(t.Number()), provider: t.String(), model: t.String() }),
         response: documentChatResponseSchema
     })
 
@@ -229,7 +232,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
         }
     })
 
-    .post('/:document_id/query', async ({ params, body }) => {
+    .post('/:document_id/query', async ({ params, body, request: { headers } }) => {
         const { document_id } = params;
         const { query, num_results = 5 } = body;
 
@@ -243,7 +246,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
         }
 
         // Perform vector search
-        const queryVector = await embeddings.embedQuery(query);
+        const queryVector = await embeddings(headers.get('apiKey') as string).embedQuery(query);
         const table = await db.openTable(document_id);
         const results = await table.vectorSearch(queryVector)
             .limit(num_results)
@@ -257,6 +260,7 @@ export const documentRoutesV1 = new Elysia({ prefix: '/v1/documents' })
     }, {
         params: t.Object({ document_id: t.String() }),
         body: t.Object({ query: t.String(), num_results: t.Optional(t.Number()) }),
+        headers: t.Optional(t.Object({ apiKey: t.String() })),
         response: t.Object({
             "results": t.Array(t.Object({
                 "content": t.String()

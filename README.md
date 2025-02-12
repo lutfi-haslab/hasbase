@@ -1,50 +1,125 @@
-# React + TypeScript + Vite
+# Project Hasbase
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
+This project utilizes Vite, Tauri, and Bun for development and building across multiple platforms, including web, mobile, and desktop.
 
-Currently, two official plugins are available:
+## Prerequisites
+Before setting up the project, ensure you have the following installed:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### Install Rust
+1. Install Rust using [rustup](https://rustup.rs/):
+   ```sh
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   ```
+2. Restart your terminal and verify the installation:
+   ```sh
+   rustc --version
+   ```
 
-## Expanding the ESLint configuration
+### Install Bun
+1. Install Bun via the official script:
+   ```sh
+   curl -fsSL https://bun.sh/install | bash
+   ```
+2. Restart your terminal and verify the installation:
+   ```sh
+   bun --version
+   ```
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+### Install Tauri CLI
+1. Install Tauri CLI globally:
+   ```sh
+   cargo install tauri-cli
+   ```
 
-- Configure the top-level `parserOptions` property like this:
+## Installation
+1. Clone the repository:
+   ```sh
+   git clone <repo_url>
+   cd <repo_name>
+   ```
+2. Install dependencies:
+   ```sh
+   bun install
+   ```
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+## Available Scripts
+The following scripts are available in `package.json`:
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+### Development
+- **Start Vite development server:**
+  ```sh
+  bun run dev
+  ```
+- **Start web development with environment config:**
+  ```sh
+  bun run dev:web
+  ```
+- **Start mobile development with environment config:**
+  ```sh
+  bun run dev:mobile
+  ```
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+### Linting
+- **Run ESLint:**
+  ```sh
+  bun run lint
+  ```
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+### Build
+- **Build the project:**
+  ```sh
+  bun run build
+  ```
+- **Build and package Tauri application:**
+  ```sh
+  bun run build:tauri
+  ```
+- **Build sidecar binaries:**
+  ```sh
+  bun run build:sidecar-winos
+  bun run build:sidecar-macos
+  bun run build:sidecar-linux
+  ```
+
+### Tauri
+- **Run Tauri application in development mode:**
+  ```sh
+  bun run tauri:dev
+  ```
+- **Run Tauri Android development:**
+  ```sh
+  bun run tauri:android:dev
+  ```
+- **Build Tauri Android APK:**
+  ```sh
+  bun run tauri:android:build
+  ```
+- **Run Tauri iOS development:**
+  ```sh
+  bun run tauri:ios:dev
+  ```
+
+### API & Server
+- **Start backend API in watch mode:**
+  ```sh
+  bun run dev:api
+  ```
+- **Start Bun server:**
+  ```sh
+  bun run server
+  ```
+
+### Icons
+- **Generate icons for Tauri:**
+  ```sh
+  bun run build:icons
+  ```
+
+## Notes
+- Ensure `rustup`, `bun`, and `tauri-cli` are installed correctly before running the scripts.
+- Use the appropriate script depending on the platform you are targeting.
+
+## License
+This project is licensed under [MIT License](LICENSE).
+

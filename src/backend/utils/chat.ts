@@ -6,11 +6,12 @@ import { chatDB } from "../db";
 import { CONFIG } from "../config";
 import { ChatMessage } from "../model";
 
-export const createChatModel = (modelName: string, streaming = false) => {
-    if (modelName.startsWith('gpt-4o-mini')) {
+export const createChatModel = (modelName: string, provider: string, apiKey?: string, streaming = false) => {
+    if (provider === "openai") {
         return new ChatOpenAI({
             modelName,
-            apiKey: CONFIG.OPEN_AI_API_KEY,
+            // apiKey: CONFIG.OPEN_AI_API_KEY,
+            apiKey,
             streaming
         });
     } else {

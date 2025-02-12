@@ -29,7 +29,9 @@
     "category": "DeveloperTool",
     "copyright": "",
     "targets": "all",
-    "externalBin": ["bin/api/main"],
+    "externalBin": [
+      "bin/api/main"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -54,6 +56,8 @@
       },
       "files": {},
       "entitlements": "./Entitlements.plist",
+      "signingIdentity": null,
+      "providerShortName": null,
       "hardenedRuntime": true,
       "minimumSystemVersion": "10.13"
     }

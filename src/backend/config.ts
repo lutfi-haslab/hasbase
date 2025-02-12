@@ -1,22 +1,18 @@
 import { join } from "path";
+import { homedir } from "os";
 
-const BASE_DIR = process.cwd();
-const VECTOR_DB_PATH = join(BASE_DIR, 'data/vector_db');
-const METADATA_FILE = join(VECTOR_DB_PATH, 'data/documents_metadata.json');
-const PGLITE_PATH = join(BASE_DIR, 'data/pglite');
-const CHAT_DB_PATH = join(BASE_DIR, 'data/chatDB');
-const USER_DB_PATH = join(BASE_DIR, 'data/userDB')
-const DOCUMENT_DB_PATH = join(BASE_DIR, 'data/documentDB')
+// Get the user's home directory
+const HOME_DIR = homedir();
+const BASE_DIR = join(HOME_DIR, ".hasbase");
 
+// Construct paths dynamically
 export const CONFIG = {
-    OPEN_AI_API_KEY: "", // In Node.js defaults to process.env.OPENAI_API_KEY
-    VECTOR_DB_PATH,
-    METADATA_FILE,
-    PGLITE_PATH,
+    OPEN_AI_API_KEY: process.env.VITE_OPENAI_API_KEY, 
+    VECTOR_DB_PATH: join(BASE_DIR, "vector_db"),
+    CHAT_DB_PATH: join(BASE_DIR, "chatDB"),
+    USER_DB_PATH: join(BASE_DIR, "userDB"),
+    DOCUMENT_DB_PATH: join(BASE_DIR, "documentDB"),
     PORT: 8008,
-    DEFAULT_MODEL: 'gpt-4o-mini',
-    CHAT_DB_PATH,
-    USER_DB_PATH,
-    DOCUMENT_DB_PATH,
+    DEFAULT_MODEL: "gpt-4o-mini",
     SYSTEM_PROMPT: "You are a helpful assistant. Provide clear and concise responses."
-}
+};

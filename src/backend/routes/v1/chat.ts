@@ -1,11 +1,8 @@
-import { ChatOllama } from "@langchain/ollama";
-import { ChatOpenAI } from "@langchain/openai";
+import { chatMessageSchema, ChatResponse, chatResponseSchema, chatSessionSchema } from "@/backend/model";
+import { createChatModel, getChatHistory, initializeChat, saveMessages } from "@/backend/utils/chat";
 import Elysia, { t } from "elysia";
 import { CONFIG } from "../../config";
 import { chatDB } from "../../db";
-import { chatMessageSchema, chatSessionSchema, ChatResponse, chatResponseSchema } from "@/backend/model";
-import { ChatMessage } from "@langchain/core/messages";
-import { getChatHistory, createChatModel, initializeChat, saveMessages } from "@/backend/utils/chat";
 
 
 export const chatRoutesV1 = new Elysia({ prefix: '/v1/chat' })
@@ -40,12 +37,13 @@ export const chatRoutesV1 = new Elysia({ prefix: '/v1/chat' })
         response: t.Array(chatSessionSchema)
     })
 
-    .post('/stream', async function* ({ query, body }) {
-        const { message, model = CONFIG.DEFAULT_MODEL } = body;
+    .post('/stream', async function* ({ query, body, headers }) {
+        const { message, model = CONFIG.DEFAULT_MODEL,
+            provider } = body;
         let { conversationId = `session-${Date.now()}` } = query;
 
         try {
-            const chatModel = createChatModel(model, true);
+            const chatModel = createChatModel(model, provider, headers['apiKey'] as string, true);
             const { title, history } = await initializeChat(conversationId, message, chatModel);
 
             yield JSON.stringify({ type: 'metadata', title, conversationId }) + '\n';
@@ -73,19 +71,23 @@ export const chatRoutesV1 = new Elysia({ prefix: '/v1/chat' })
     }, {
         body: t.Object({
             message: t.String(),
-            model: t.Optional(t.String())
+            model: t.Optional(t.String()),
+            provider: t.String()
         }),
+        headers: t.Optional(t.Object({ apiKey: t.String() })),
         query: t.Object({
             conversationId: t.Optional(t.String())
         })
     })
 
-    .post('/', async ({ body, query }): Promise<ChatResponse> => {
-        const { message, model = CONFIG.DEFAULT_MODEL } = body;
+    .post('/', async ({ body, query, request: { headers } }): Promise<ChatResponse> => {
+        const { message, model = CONFIG.DEFAULT_MODEL,
+            provider } = body;
         let { conversationId = `session-${Date.now()}` } = query;
+        console.log(headers.get("apiKey"));
 
         try {
-            const chatModel = createChatModel(model);
+            const chatModel = createChatModel(model, provider, headers.get('apiKey') as string);
             const { title, history } = await initializeChat(conversationId, message, chatModel);
 
             const response = await chatModel.invoke([
@@ -111,13 +113,17 @@ export const chatRoutesV1 = new Elysia({ prefix: '/v1/chat' })
                 message: 'Failed to process chat message'
             };
         }
-    }, {
-        body: t.Object({
-            message: t.String(),
-            model: t.Optional(t.String())
-        }),
-        query: t.Object({
-            conversationId: t.Optional(t.String())
-        }),
-        response: chatResponseSchema
-    });
+    },
+        {
+            body: t.Object({
+                message: t.String(),
+                model: t.Optional(t.String()),
+                provider: t.String()
+            }),
+            headers: t.Optional(t.Object({ apiKey: t.String() })),
+            query: t.Object({
+                conversationId: t.Optional(t.String())
+            }),
+            response: chatResponseSchema
+        }
+    );

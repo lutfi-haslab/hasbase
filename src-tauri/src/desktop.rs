@@ -3,6 +3,12 @@ use std::sync::{Arc, Mutex};
 use tauri::{Emitter, Manager, RunEvent};
 use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
+use std::fs;
+use crate::desktop::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
+use std::env;
+
 
 #[tauri::command]
 fn toggle_fullscreen(window: tauri::Window) {
@@ -104,12 +110,84 @@ fn start_sidecar(app_handle: tauri::AppHandle) -> Result<String, String> {
     Ok("Sidecar spawned and monitoring started.".to_string())
 }
 
+// Helper function to create directory if it doesn't exist
+fn ensure_directory(base_path: &PathBuf, dir_name: &str) -> Result<PathBuf, std::io::Error> {
+    let dir_path = base_path.join(dir_name);
+    if !dir_path.exists() {
+        fs::create_dir_all(&dir_path)?;
+        println!("[tauri] Created directory at: {:?}", dir_path);
+    } else {
+        println!("[tauri] Directory already exists at: {:?}", dir_path);
+    }
+    Ok(dir_path)
+}
+
+// Helper function to create JSON file if it doesn't exist
+fn ensure_json_file(base_path: &PathBuf, file_name: &str) -> Result<(), std::io::Error> {
+    let file_path = base_path.join(file_name);
+    if !file_path.exists() {
+        let mut file = File::create(&file_path)?;
+        // Initialize with empty JSON object
+        file.write_all(b"{}")?;
+        println!("[tauri] Created JSON file at: {:?}", file_path);
+    } else {
+        println!("[tauri] JSON file already exists at: {:?}", file_path);
+    }
+    Ok(())
+}
+
 #[cfg(not(mobile))]
 pub fn desktop_entry_point() {
     tauri::Builder::default()
         // Add any necessary plugins
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
+            #[cfg(debug_assertions)] // only include this code on debug builds
+            {
+              let window = app.get_webview_window("main").unwrap();
+              window.open_devtools();
+              window.close_devtools();
+            }
+
+            // Get user's home directory and create an app folder there
+            let home_dir = env::var("HOME")
+                .or_else(|_| env::var("USERPROFILE")) // Fallback for Windows
+                .expect("Could not find home directory");
+            let base_path = PathBuf::from(home_dir).join(".hasbase"); // Create .hasbase in home directory
+
+            // Create the base app directory
+            if let Err(e) = fs::create_dir_all(&base_path) {
+                eprintln!("[tauri] Failed to create base directory: {}", e);
+                return Ok(());
+            }
+
+            // Create all required directories
+            let directories = [
+                "vector_db",
+                "chatDB",
+                "userDB",
+                "documentDB"
+            ];
+
+            // Create directories
+            for dir in directories.iter() {
+                if let Err(e) = ensure_directory(&base_path, dir) {
+                    eprintln!("[tauri] Failed to create directory {}: {}", dir, e);
+                }
+            }
+
+            // Create JSON files in their respective directories
+            let json_files = [
+                "chatDB.json",
+                "userDB.json",
+               "documentDB.json",
+            ];
+
+            for file in json_files.iter() {
+                if let Err(e) = ensure_json_file(&base_path, file) {
+                    eprintln!("[tauri] Failed to create file {} in {}: {}", file, base_path.display(), e);
+                }
+            }
             // Store the initial sidecar process in the app state
             app.manage(Arc::new(Mutex::new(None::<CommandChild>)));
             // Clone the app handle for use elsewhere

@@ -47,14 +47,16 @@ export async function fetchConversations(): Promise<Conversation[]> {
 export async function sendChatMessage(
   message: string,
   conversationId?: string,
-  model?: string
+  model?: string,
+  apiKey: string = "",
+  provider: string = "openai"
 ): Promise<ChatResponse> {
   const response = await fetch(
     `${API_BASE_URL}/v1/chat${conversationId ? `?conversationId=${conversationId}` : ''}`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, model }),
+      headers: { 'Content-Type': 'application/json', "apiKey": apiKey },
+      body: JSON.stringify({ message, model, provider }),
     }
   );
   return response.json();
@@ -63,14 +65,16 @@ export async function sendChatMessage(
 export async function sendStreamingChatMessage(
   message: string,
   conversationId?: string,
-  model?: string
+  model?: string,
+  apiKey: string = "",
+  provider: string = "openai"
 ): Promise<ChatStreamResponse> {
   const response = await fetch(
     `${API_BASE_URL}/v1/chat/stream${conversationId ? `?conversationId=${conversationId}` : ''}`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message, model }),
+      headers: { 'Content-Type': 'application/json', apiKey: apiKey },
+      body: JSON.stringify({ message, model, provider }),
     }
   );
   return response.json();
@@ -82,14 +86,15 @@ export async function fetchDocuments(): Promise<DocumentListInfo[]> {
   return await response.json();
 }
 
-export async function uploadDocument(file: File): Promise<DocumentUploadResponse> {
+export async function uploadDocument(file: File, apiKey: string): Promise<DocumentUploadResponse> {
   const formData = new FormData();
   formData.append('file', file);
 
   const response = await fetch(`${API_BASE_URL}/v1/documents/upload`, {
     method: 'POST',
     body: formData,
-  });
+    headers: { 'Content-Type': 'multipart/form-data', "apiKey": apiKey },
+  },);
   return response.json();
 }
 
@@ -102,15 +107,18 @@ export async function chatWithDocument(
   documentId: string,
   question: string,
   numContext?: number,
-  conversationId?: string
+  conversationId?: string,
+  model: string = "",
+  apiKey: string = "",
+  provider: string = "openai"
 ): Promise<ChatResponse> {
   const response = await fetch(
     `${API_BASE_URL}/v1/documents/${documentId}/chat${conversationId ? `?conversationId=${conversationId}` : ''
     }`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, num_context: numContext }),
+      headers: { 'Content-Type': 'application/json', "apiKey": apiKey },
+      body: JSON.stringify({ question, num_context: numContext, provider, model }),
     }
   );
   return response.json();
@@ -126,11 +134,12 @@ export async function getDocumentConversations(
 export async function queryDocument(
   documentId: string,
   query: string,
-  numResults?: number
+  numResults: number = 2,
+  apiKey: string
 ): Promise<DocumentQueryResponse> {
   const response = await fetch(`${API_BASE_URL}/v1/documents/${documentId}/query`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', "apiKey": apiKey },
     body: JSON.stringify({ query, num_results: numResults }),
   });
   return response.json();

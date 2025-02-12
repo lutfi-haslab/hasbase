@@ -16,17 +16,13 @@
     "tauri:android:build": "cp .env.mobile .env.local && tauri android build --apk --split-per-abi",
     "tauri:ios:dev": "tauri ios dev",
     "server": "bun run --watch bun-server/index.ts",
-    "build:tauri": "bun run tauri build --bundles dmg",
-    "build:server": "bun build bun-server/index.ts --target=bun-darwin-arm64 --outfile src-tauri/binaries/app-server-aarch64-apple-darwin --compile",
-    "test": "bun build server/test.ts --compile --outfile server/app",
-    "build:sidecar-winos": "pyinstaller -c -F --clean --name main-x86_64-pc-windows-msvc --distpath src-tauri/bin/api src/backends/main.py",
+    "build:tauri": "cp .env.desktop .env.local &&  bun run tauri build --bundles app --verbose",
+    "build:sidecar-winos": "bun build --compile --minify --sourcemap ./src/backend/index.ts --outfile src-tauri/bin/api/main-x86_64-pc-windows-msvc",
     "build:sidecar-macos": "bun build --compile --minify --sourcemap ./src/backend/index.ts --outfile src-tauri/bin/api/main-aarch64-apple-darwin",
-    "build:sidecar-linux": "pyinstaller -c -F --clean --name main-x86_64-unknown-linux-gnu --distpath src-tauri/bin/api src/backends/main.py",
+    "build:sidecar-linux": "bun build --compile --minify --sourcemap ./src/backend/index.ts --outfile src-tauri/bin/api/main-x86_64-unknown-linux-gnu",
     "build:icons": "bun tauri icon public/app-icon.png",
     "dev:api": "bun run --watch src/backend/index.ts",
-    "test:api": "bun run --watch src/backend/test/index.ts",
-    "install-reqs": "bun install && pip3 install -r requirements.txt",
-    "api:prod": "./src-tauri/bin/api/main-aarch64-apple-darwin"
+    "api:test-bin": "./src-tauri/bin/api/main-aarch64-apple-darwin"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.2.16",
